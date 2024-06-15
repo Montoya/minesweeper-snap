@@ -1,5 +1,5 @@
 import { type OnHomePageHandler, type OnUserInputHandler, type OnInstallHandler, UserInputEventType } from "@metamask/snaps-sdk";
-import { SnapComponent, Box, Button, Image, Heading, Text, Italic, Row, Form, Dropdown, Option, Field, Divider, Copyable } from '@metamask/snaps-sdk/jsx';
+import { SnapComponent, Box, Button, Image, Heading, Text, Italic, Row, Form, Dropdown, Option, Field, Divider, Copyable, GenericSnapElement, MaybeArray } from '@metamask/snaps-sdk/jsx';
 /*
 const svgTitle = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200"><style>.sign{text-anchor:middle;dominant-baseline:middle;font-size:64px;font-weight:bold}</style><defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="200" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#818181"/><stop offset=".24" stop-color="#b8b8b8"/><stop offset=".51" stop-color="#f3f3f3"/><stop offset=".86" stop-color="#b4b4b4"/><stop offset="1" stop-color="#666"/></linearGradient><filter id="c" x="-50%" y="-50%" width="200%" height="200%"><feComponentTransfer in="SourceAlpha"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer><feGaussianBlur stdDeviation="4"/><feOffset dy="5" result="offsetblur"/><feFlood flood-color="#000" result="color"/><feComposite in2="offsetblur" operator="in"/><feComposite in2="SourceAlpha" operator="in"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode/></feMerge></filter><filter id="g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8 8" result="glow"/><feMerge><feMergeNode in="glow"/><feMergeNode in="glow"/><feMergeNode in="glow"/></feMerge></filter></defs><path fill="url(#a)" style="box-shadow:0 0 112px 168px inset rgba(0,0,0,.8)" d="M0 0h400v200H0z"/><rect fill="#334" filter="url(#c)" x="16" y="16" width="368" height="168"/><text x="200" y="62" class="sign" style="font-size:24px;font-weight:normal;font-family:'Comic Sans MS','Comic Sans',Charcoal,cursive" fill="white">Let's play...</text><text x="200" y="124" class="sign" fill="#ff8c00" filter="url(#g)">Slots</text><text x="200" y="124" class="sign" fill="white">Slots</text></svg>`; 
 
@@ -37,14 +37,71 @@ export const onHomePage: OnHomePageHandler = async () => {
     params: { operation: "get" },
   })  || { balance: 1000, new: true, lastBet: 0, lastResult: [reel[0],reel[0],reel[0]], reel: "fox" };
   */
-  const board = [...new Array(10).fill(1),...new Array(71).fill(0)]; 
+  /* 
+   * 9 = bomb
+   * 0 = empty space 
+   * 1-8 = adjacent # of bombs
+   */
+  const board = [...new Array(10).fill(9),...new Array(71).fill(0)]; 
   shuffleArray(board); 
+  // count spaces around bombs 
+  const boardLength = parseInt(Math.sqrt(board.length)); 
+  for(let x = 0; x < boardLength; x++) { 
+    for(let y = 0; y < boardLength; y++) { 
+      // walk array 
+      const index = y*boardLength+x; 
+      if(board[index]==9) { 
+        // we are at a bomb
+        // let's try to add 1 to every square around this bomb 
+        // we have to do 8 iterations 
+        let tmpIndex = (y-1)*boardLength+(x-1); // iteration 1
+        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+          board[tmpIndex] += 1; 
+        }
+        tmpIndex = y*boardLength+(x-1); // iteration 2 
+        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+          board[tmpIndex] += 1; 
+        }
+        tmpIndex = (y+1)*boardLength+(x-1); // iteration 3
+        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+          board[tmpIndex] += 1; 
+        }
+        tmpIndex = (y-1)*boardLength+x; // iteration 4
+        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+          board[tmpIndex] += 1; 
+        }
+        tmpIndex = (y+1)*boardLength+x; // iteration 5
+        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+          board[tmpIndex] += 1; 
+        }
+        tmpIndex = (y-1)*boardLength+(x+1); // iteration 6
+        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+          board[tmpIndex] += 1; 
+        }
+        tmpIndex = y*boardLength+(x+1); // iteration 7
+        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+          board[tmpIndex] += 1; 
+        }
+        tmpIndex = (y+1)*boardLength+(x+1); // iteration 8
+        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+          board[tmpIndex] += 1; 
+        }
+      }
+    }
+  }
+  // we should now have a proper board 
+  // let's slice out boardLength at a time 
+  const board2D = []; 
+  for(let i = 0; i < board.length; i += boardLength) { 
+    board2D.push( board.slice(i,i+boardLength) ); 
+  }
+  console.log(board2D); 
   const interfaceId = await snap.request({
     method: "snap_createInterface",
     params: {
       ui: (
         <Box>
-          <Copyable value={board.join(',')}/>
+          {board2D.map( (item:string) => <Text>{item.join('')}</Text>)}
         </Box>
       )
     },
