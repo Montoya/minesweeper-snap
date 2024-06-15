@@ -1,5 +1,5 @@
 import { type OnHomePageHandler, type OnUserInputHandler, type OnInstallHandler, UserInputEventType } from "@metamask/snaps-sdk";
-import { SnapComponent, Box, Button, Image, Heading, Text, Italic, Row, Form, Dropdown, Option, Field, Divider, Copyable, GenericSnapElement, MaybeArray } from '@metamask/snaps-sdk/jsx';
+import { SnapComponent, Box, Button, Image, Heading, Text, Italic, Row, Form, Dropdown, Option, Field, Divider, Copyable, GenericSnapElement, MaybeArray, SnapElement } from '@metamask/snaps-sdk/jsx';
 /*
 const svgTitle = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200"><style>.sign{text-anchor:middle;dominant-baseline:middle;font-size:64px;font-weight:bold}</style><defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="200" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#818181"/><stop offset=".24" stop-color="#b8b8b8"/><stop offset=".51" stop-color="#f3f3f3"/><stop offset=".86" stop-color="#b4b4b4"/><stop offset="1" stop-color="#666"/></linearGradient><filter id="c" x="-50%" y="-50%" width="200%" height="200%"><feComponentTransfer in="SourceAlpha"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer><feGaussianBlur stdDeviation="4"/><feOffset dy="5" result="offsetblur"/><feFlood flood-color="#000" result="color"/><feComposite in2="offsetblur" operator="in"/><feComposite in2="SourceAlpha" operator="in"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode/></feMerge></filter><filter id="g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8 8" result="glow"/><feMerge><feMergeNode in="glow"/><feMergeNode in="glow"/><feMergeNode in="glow"/></feMerge></filter></defs><path fill="url(#a)" style="box-shadow:0 0 112px 168px inset rgba(0,0,0,.8)" d="M0 0h400v200H0z"/><rect fill="#334" filter="url(#c)" x="16" y="16" width="368" height="168"/><text x="200" y="62" class="sign" style="font-size:24px;font-weight:normal;font-family:'Comic Sans MS','Comic Sans',Charcoal,cursive" fill="white">Let's play...</text><text x="200" y="124" class="sign" fill="#ff8c00" filter="url(#g)">Slots</text><text x="200" y="124" class="sign" fill="white">Slots</text></svg>`; 
 
@@ -28,6 +28,42 @@ function shuffleArray(array:Array<Number|undefined>) {
     const j = Math.floor(crypto.getRandomValues(new Uint32Array(1))[0]/4294967296 * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
   }
+}
+
+function getEmoji(num:Number):string { 
+  switch(num) { 
+    case 0: 
+      return '⬜'; 
+    case 1: 
+      return '1️⃣'; 
+    case 2: 
+      return '2️⃣'; 
+    case 3: 
+      return '3️⃣'; 
+    case 4: 
+      return '4️⃣'; 
+    case 5: 
+      return '5️⃣'; 
+    case 6: 
+      return '6️⃣'; 
+    case 7: 
+      return '7️⃣'; 
+    case 8: 
+      return '8️⃣'; 
+    case 9: 
+      return '💣'; 
+    default: 
+      return '🔳'; 
+  }
+}
+
+type MbtnProps = { 
+  index: Number;
+  val: Number;
+}; 
+
+const Mbtn: SnapComponent<MbtnProps> = ({index, val}) => { 
+  return <Button name={"space"+index}>{getEmoji(val)}</Button>; 
 }
 
 export const onHomePage: OnHomePageHandler = async () => {
@@ -95,13 +131,77 @@ export const onHomePage: OnHomePageHandler = async () => {
   for(let i = 0; i < board.length; i += boardLength) { 
     board2D.push( board.slice(i,i+boardLength) ); 
   }
+  /* 
   console.log(board2D); 
+  this never works 
+  {board2D.map( board => { 
+            return (
+              <Box direction="horizontal" alignment="center">
+                <Button name="space0">{getEmoji(board[0])}</Button>
+              </Box>
+            );
+          })}
+  */
   const interfaceId = await snap.request({
     method: "snap_createInterface",
     params: {
       ui: (
         <Box>
-          {board2D.map( (item:string) => <Text>{item.join('')}</Text>)}
+          <Box direction="horizontal" alignment="center">
+            <Button name="space0">{getEmoji(board[0])}</Button>
+            <Button name="space1">{getEmoji(board[1])}</Button>
+            <Button name="space2">{getEmoji(board[2])}</Button>
+            <Button name="space3">{getEmoji(board[3])}</Button>
+            <Button name="space4">{getEmoji(board[4])}</Button>
+            <Button name="space5">{getEmoji(board[5])}</Button>
+            <Button name="space6">{getEmoji(board[6])}</Button>
+            <Button name="space7">{getEmoji(board[7])}</Button>
+            <Button name="space8">{getEmoji(board[8])}</Button>
+          </Box>
+          <Box direction="horizontal" alignment="center">
+            <Button name="space9">{getEmoji(board[9])}</Button>
+            <Button name="space10">{getEmoji(board[10])}</Button>
+            <Button name="space11">{getEmoji(board[11])}</Button>
+            <Button name="space12">{getEmoji(board[12])}</Button>
+            <Button name="space13">{getEmoji(board[13])}</Button>
+            <Button name="space14">{getEmoji(board[14])}</Button>
+            <Button name="space15">{getEmoji(board[15])}</Button>
+            <Button name="space16">{getEmoji(board[16])}</Button>
+            <Button name="space17">{getEmoji(board[17])}</Button>
+          </Box>
+          <Box direction="horizontal" alignment="center">
+            <Mbtn index={18} val={board[18]}></Mbtn>
+            <Mbtn index={19} val={board[19]}></Mbtn>
+            <Mbtn index={20} val={board[20]}></Mbtn>
+            <Mbtn index={21} val={board[21]}></Mbtn>
+            <Mbtn index={22} val={board[22]}></Mbtn>
+            <Mbtn index={23} val={board[23]}></Mbtn>
+            <Mbtn index={24} val={board[24]}></Mbtn>
+            <Mbtn index={25} val={board[25]}></Mbtn>
+            <Mbtn index={26} val={board[26]}></Mbtn>
+          </Box>
+          <Box direction="horizontal" alignment="center">
+            <Mbtn index={27} val={board[27]}></Mbtn>
+            <Mbtn index={28} val={board[28]}></Mbtn>
+            <Mbtn index={29} val={board[29]}></Mbtn>
+            <Mbtn index={30} val={board[30]}></Mbtn>
+            <Mbtn index={31} val={board[31]}></Mbtn>
+            <Mbtn index={32} val={board[32]}></Mbtn>
+            <Mbtn index={33} val={board[33]}></Mbtn>
+            <Mbtn index={34} val={board[34]}></Mbtn>
+            <Mbtn index={35} val={board[35]}></Mbtn>
+          </Box>
+          <Box direction="horizontal" alignment="center">
+            <Mbtn index={36} val={board[36]}></Mbtn>
+            <Mbtn index={37} val={board[37]}></Mbtn>
+            <Mbtn index={38} val={board[38]}></Mbtn>
+            <Mbtn index={39} val={board[39]}></Mbtn>
+            <Mbtn index={40} val={board[40]}></Mbtn>
+            <Mbtn index={41} val={board[41]}></Mbtn>
+            <Mbtn index={42} val={board[42]}></Mbtn>
+            <Mbtn index={43} val={board[43]}></Mbtn>
+            <Mbtn index={44} val={board[44]}></Mbtn>
+          </Box>
         </Box>
       )
     },
