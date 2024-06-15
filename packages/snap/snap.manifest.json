@@ -7,12 +7,12 @@
     "url": "https://github.com/Montoya/minesweeper-snap.git"
   },
   "source": {
-    "shasum": "TwVBeJ/PL4uARBEFZmgJukYd3XWyTbilkOPhtdg+GvU=",
+    "shasum": "YclZlxL3KSbFM1uZ4YSIK/5h2qXXFtI7ROop/6sr4j8=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
         "iconPath": "images/icon.svg",
-        "packageName": "snap",
+        "packageName": "minesweeper-snap",
         "registry": "https://registry.npmjs.org/"
       }
     }
