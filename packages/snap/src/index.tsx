@@ -31,6 +31,12 @@ function shuffleArray(array:Array<Number|undefined>) {
 }
 
 function getEmoji(num:Number):string { 
+  /* 
+   * 9 = bomb
+   * 0 = empty space 
+   * 1-8 = adjacent # of bombs
+   * 10+ = hidden space 
+   */
   switch(num) { 
     case 0: 
       return '⬜'; 
@@ -57,31 +63,11 @@ function getEmoji(num:Number):string {
   }
 }
 
-type MbtnProps = { 
-  index: Number;
-  val: Number;
-}; 
-
-const Mbtn: SnapComponent<MbtnProps> = ({index, val}) => { 
-  return <Button name={"space"+index}>{getEmoji(val)}</Button>; 
-}
-
-export const onHomePage: OnHomePageHandler = async () => {
-  /*
-  const playerState = await snap.request({
-    method: "snap_manageState",
-    params: { operation: "get" },
-  })  || { balance: 1000, new: true, lastBet: 0, lastResult: [reel[0],reel[0],reel[0]], reel: "fox" };
-  */
-  /* 
-   * 9 = bomb
-   * 0 = empty space 
-   * 1-8 = adjacent # of bombs
-   */
+function makeBoard():Array<Number> { 
   const board = [...new Array(10).fill(9),...new Array(71).fill(0)]; 
   shuffleArray(board); 
   // count spaces around bombs 
-  const boardLength = parseInt(Math.sqrt(board.length)); 
+  const boardLength = Math.sqrt(board.length); // must be a square number... 
   for(let x = 0; x < boardLength; x++) { 
     for(let y = 0; y < boardLength; y++) { 
       // walk array 
@@ -130,366 +116,123 @@ export const onHomePage: OnHomePageHandler = async () => {
       }
     }
   }
-  // we should now have a proper board 
-  // let's slice out boardLength at a time 
-  const board2D = []; 
-  for(let i = 0; i < board.length; i += boardLength) { 
-    board2D.push( board.slice(i,i+boardLength) ); 
+  // finally, increment every space by 10 
+  for(let i = 0; i < board.length; i++) { 
+    board[i] += 10; 
   }
-  /* 
-  console.log(board2D); 
-  this never works 
-  {board2D.map( board => { 
-            return (
-              <Box direction="horizontal" alignment="center">
-                <Button name="space0">{getEmoji(board[0])}</Button>
-              </Box>
-            );
-          })}
-  */
-  const array2d = [
-    ["a","b"],
-    ["c","d"],
-    ["e","f"]
-  ]; 
-  const interfaceId = await snap.request({
-    method: "snap_createInterface",
-      params: {
-        ui: (
-          <Box>
-            {board2D.map( (row,y) => { 
-              return ( 
-                <Box direction="horizontal" alignment="center">
-                  {row.map( (cell,x) => <Button name={"space"+x+"-"+y}>{getEmoji(cell)}</Button> )}
-                </Box>
-              ); 
-            })}
-          </Box>
-        ),
-      },
-  }); 
-  return { 
-    id: interfaceId
-  }
+  return board; 
+}
 
- /*
-  const interfaceId = await snap.request({
+type CellProps = { 
+  x: Number;
+  y: Number; 
+  val: Number;
+}; 
+
+const Cell: SnapComponent<CellProps> = ({x, y, val}) => { 
+  if(val > 9) { 
+    return <Button name={"space"+x+"-"+y}>{getEmoji(val)}</Button>; 
+  }
+  return <Text>{getEmoji(val)}</Text>; 
+}
+
+const Welcome: SnapComponent = () => { 
+  return ( 
+    <Box>
+      <Heading>Welcome to Minesweeper!</Heading>
+      <Text>Try to uncover the empty spaces on the board without tripping a mine.</Text>
+      <Text>Ready to play?</Text>
+      <Button name="start">Start</Button>
+    </Box>
+  ); 
+}
+
+export const onHomePage: OnHomePageHandler = async () => {
+  const interfaceId = await snap.request({ 
     method: "snap_createInterface",
     params: {
-      ui: (
-        <Box>
-          <Box direction="horizontal" alignment="center">
-            <Button name="space0">{getEmoji(board[0])}</Button>
-            <Button name="space1">{getEmoji(board[1])}</Button>
-            <Button name="space2">{getEmoji(board[2])}</Button>
-            <Button name="space3">{getEmoji(board[3])}</Button>
-            <Button name="space4">{getEmoji(board[4])}</Button>
-            <Button name="space5">{getEmoji(board[5])}</Button>
-            <Button name="space6">{getEmoji(board[6])}</Button>
-            <Button name="space7">{getEmoji(board[7])}</Button>
-            <Button name="space8">{getEmoji(board[8])}</Button>
-          </Box>
-          <Box direction="horizontal" alignment="center">
-            <Button name="space9">{getEmoji(board[9])}</Button>
-            <Button name="space10">{getEmoji(board[10])}</Button>
-            <Button name="space11">{getEmoji(board[11])}</Button>
-            <Button name="space12">{getEmoji(board[12])}</Button>
-            <Button name="space13">{getEmoji(board[13])}</Button>
-            <Button name="space14">{getEmoji(board[14])}</Button>
-            <Button name="space15">{getEmoji(board[15])}</Button>
-            <Button name="space16">{getEmoji(board[16])}</Button>
-            <Button name="space17">{getEmoji(board[17])}</Button>
-          </Box>
-          <Box direction="horizontal" alignment="center">
-            <Mbtn index={18} val={board[18]}></Mbtn>
-            <Mbtn index={19} val={board[19]}></Mbtn>
-            <Mbtn index={20} val={board[20]}></Mbtn>
-            <Mbtn index={21} val={board[21]}></Mbtn>
-            <Mbtn index={22} val={board[22]}></Mbtn>
-            <Mbtn index={23} val={board[23]}></Mbtn>
-            <Mbtn index={24} val={board[24]}></Mbtn>
-            <Mbtn index={25} val={board[25]}></Mbtn>
-            <Mbtn index={26} val={board[26]}></Mbtn>
-          </Box>
-          <Box direction="horizontal" alignment="center">
-            <Mbtn index={27} val={board[27]}></Mbtn>
-            <Mbtn index={28} val={board[28]}></Mbtn>
-            <Mbtn index={29} val={board[29]}></Mbtn>
-            <Mbtn index={30} val={board[30]}></Mbtn>
-            <Mbtn index={31} val={board[31]}></Mbtn>
-            <Mbtn index={32} val={board[32]}></Mbtn>
-            <Mbtn index={33} val={board[33]}></Mbtn>
-            <Mbtn index={34} val={board[34]}></Mbtn>
-            <Mbtn index={35} val={board[35]}></Mbtn>
-          </Box>
-          <Box direction="horizontal" alignment="center">
-            <Mbtn index={36} val={board[36]}></Mbtn>
-            <Mbtn index={37} val={board[37]}></Mbtn>
-            <Mbtn index={38} val={board[38]}></Mbtn>
-            <Mbtn index={39} val={board[39]}></Mbtn>
-            <Mbtn index={40} val={board[40]}></Mbtn>
-            <Mbtn index={41} val={board[41]}></Mbtn>
-            <Mbtn index={42} val={board[42]}></Mbtn>
-            <Mbtn index={43} val={board[43]}></Mbtn>
-            <Mbtn index={44} val={board[44]}></Mbtn>
-          </Box>
-        </Box>
-      )
-    },
+      ui: <Welcome/>
+    }
   }); 
   return { 
     id: interfaceId
-  } */
+  }
 };
-/*
-export const onUserInput: OnUserInputHandler = async ({id, event}) => { 
 
-  if(event.name=="clear") { 
+export const onUserInput: OnUserInputHandler = async ({id, event}) => { 
+  if(event.name=="new") { 
     await snap.request({ 
       method: "snap_manageState",
       params: { operation: "clear" },
     }); 
-    event.name = "startFresh"; 
-  }
-
-  const playerState = await snap.request({
-    method: "snap_manageState",
-    params: { operation: "get" },
-  }) || { balance: 1000, new: true, lastBet: 0, lastResult: [reel[0],reel[0],reel[0]], reel: "fox" };
-
-  if(event.name=="settingsForm" && event.type==UserInputEventType.FormSubmitEvent) { 
-    playerState.reel = ''+event.value.reel; 
-  }
-
-  switch(playerState.reel) { 
-    case 'gator': 
-      reel = ['🐊','🐘','🦒','🐅','🐅','🦓','🦓']; 
-      break; 
-    case 'frog': 
-      reel = ['🐸','🍱','🍵','🍥','🍥','🍄','🍄']; 
-      break; 
-    case 'gem': 
-      reel = ['💎','👑','💰','👠','👠','🛍️','🛍️']; 
-      break; 
-    case 'fox': 
-    default: 
-      reel = ['🦊','🍒','🍊','🍌','🍌','🍎','🍎']; 
-      break; 
-  }
-
-  if(event.name=="settingsForm" && event.type==UserInputEventType.FormSubmitEvent) { 
-    playerState.lastResult = [reel[0],reel[0],reel[0]]; 
-    await snap.request({
-      method: "snap_manageState",
-      params: { 
-        operation: "update",
-        newState: playerState,
-      },
-    });
     event.name = "start"; 
   }
 
-  switch (event.name) { 
-    case "new": 
-      snap.request({ 
+  const playerState = await snap.request({method: "snap_manageState",
+    params: { operation: "get" },
+  })  || { board: [] };
+  
+  switch(event.name) { 
+    case 'start': 
+    default: 
+      if(playerState.board.length < 1) { 
+        // time to make a new board 
+        playerState.board = makeBoard(); 
+        await snap.request({method: "snap_manageState",
+          params: { 
+            operation: "update", 
+            newState: playerState
+          },
+        }); 
+      }
+      const boardLength = Math.sqrt(playerState.board.length);
+      // we should now have a proper board 
+      // let's slice out boardLength at a time 
+      const board2D = []; 
+      for(let i = 0; i < playerState.board.length; i += boardLength) { 
+        board2D.push( playerState.board.slice(i,i+boardLength) ); 
+      }
+      await snap.request({
         method: "snap_updateInterface",
-        params: { 
+        params: {
           id, 
           ui: (
             <Box>
-              <Heading>Welcome to Slots!</Heading>
-              <Text>In this game, you start with (virtual) $1000 and bet on a slot machine to earn more. If you run out of money, you can reset and start again. Sounds fun, right? Let's play...</Text>
-              <Button name="startFresh">Continue</Button>
-            </Box>
-          )
-        }
-      }); 
-      break;
-    case "startOver": 
-      playerState.balance = 1000; 
-      playerState.lastBet = 0;
-      playerState.lastResult = [reel[0],reel[0],reel[0]]; 
-    case "startFresh": 
-      playerState.new = false; 
-      await snap.request({
-        method: "snap_manageState",
-        params: { 
-          operation: "update",
-          newState: playerState,
-        },
-      });
-    case "start": 
-      snap.request({ 
-        method: "snap_updateInterface",
-        params: { 
-          id, 
-          ui: ( 
-            <Box>
-              <StaticSlot one={playerState.lastResult[0]} two={playerState.lastResult[1]} three={playerState.lastResult[2]}/>
-              <Row label="Balance"><Text>{"$"+playerState.balance}</Text></Row>
-              <Box direction="horizontal" alignment="space-between">
-                { playerState.balance >= 5 ? ( 
-                  <Button name="bet5">Bet 5</Button>
-                ) : ( 
-                  <Box direction="horizontal" alignment="space-between"><Text>You are out of money... </Text><Button name="startOver">Start over</Button></Box>
-                )}
-                {playerState.balance >= 10 ? ( 
-                  <Button name="bet10">Bet 10</Button>
-                ) : null}
-                {playerState.balance >= 25 ? (
-                  <Button name="bet25">Bet 25</Button>
-                ) : null}
-                <Button name="settings">⚙️</Button>
+              <Box>
+                {board2D.map( (row,y) => { 
+                  return ( 
+                    <Box direction="horizontal" alignment="center">
+                      {row.map( (cell,x) => <Cell x={x} y={y} val={cell}/> )}
+                    </Box>
+                  ); 
+                })}
               </Box>
-            </Box>
-          )
-        }
-      }); 
-      break; 
-    case "bet5": 
-    case "bet10": 
-    case "bet25": 
-      playerState.lastBet = parseInt(event.name.substring(3)); 
-      playerState.balance -= playerState.lastBet; 
-      const valuesArray = new Uint32Array(3);
-      crypto.getRandomValues(valuesArray); 
-      const one = reel[valuesArray[0]%reel.length]; 
-      const two = reel[valuesArray[1]%reel.length]; 
-      const three = reel[valuesArray[2]%reel.length]; 
-      let win = 0; 
-      if(one==two && two==three) { 
-        switch(one) { 
-          case reel[0]: 
-            win = playerState.lastBet * 40; 
-            break; 
-          case reel[1]: 
-            win = playerState.lastBet * 25; 
-            break; 
-          case reel[2]: 
-            win = playerState.lastBet * 10; 
-            break; 
-          case reel[3]: 
-            win = playerState.lastBet * 5; 
-            break; 
-          case reel[5]: 
-            win = playerState.lastBet * 2; 
-            break; 
-        }
-      } else if(one==reel[0] && one==two || two==reel[0] && two==three || three==reel[0] && one==three) { 
-        win = playerState.lastBet * 8; 
-      }
-      else if(one==reel[0] || two==reel[0] || three==reel[0]) { 
-        win = playerState.lastBet; 
-      }
-      playerState.lastResult[0] = one;
-      playerState.lastResult[1] = two; 
-      playerState.lastResult[2] = three; 
-      await snap.request({
-        method: "snap_updateInterface",
-        params: { 
-          id, 
-          ui: ( 
-            <Box>
-              <Slot one={playerState.lastResult[0]} two={playerState.lastResult[1]} three={playerState.lastResult[2]}/>
-              <Row label="Balance"><Text>{"$"+playerState.balance}</Text></Row>
+              <Button name={playerState.board.find((e) => e > 9) ? "confirmNew" : "new"}>New game</Button>
             </Box>
           ),
-        },
-      }); 
-      playerState.balance += win; 
-      await snap.request({
-        method: "snap_manageState",
-        params: { 
-          operation: "update",
-          newState: playerState,
         },
       });
-      const prom = new Promise<void>((resolve) => { 
-        setTimeout(() => {
-          snap.request({ 
-            method: "snap_updateInterface",
-            params: { 
-              id, 
-              ui: ( 
-                <Box>
-                  <StaticSlot one={playerState.lastResult[0]} two={playerState.lastResult[1]} three={playerState.lastResult[2]}/>
-                  <Row label="Balance"><Text>{"$"+playerState.balance}</Text></Row>
-                  <Text><Italic>{win?"You won $"+win+"!":"Try again..."}</Italic></Text>
-                  <Box direction="horizontal" alignment="space-between">
-                    { playerState.balance >= 5 ? ( 
-                      <Button name="bet5">Bet 5</Button>
-                    ) : ( 
-                      <Box direction="horizontal" alignment="space-between"><Text>You are out of money... </Text><Button name="startOver">Start over</Button></Box>
-                    )}
-                    {playerState.balance >= 10 ? ( 
-                      <Button name="bet10">Bet 10</Button>
-                    ) : null}
-                    {playerState.balance >= 25 ? (
-                      <Button name="bet25">Bet 25</Button>
-                    ) : null}
-                    <Button name="settings">⚙️</Button>
-                  </Box>
-                </Box>
-              )
-            }
-          }); 
-          resolve(); 
-        }, 5000); 
-      }); 
-      return prom; 
       break; 
-    case 'settings': 
+    case 'confirmNew': 
       await snap.request({
         method: "snap_updateInterface",
-        params: { 
+        params: {
           id, 
-          ui: ( 
-            <Box>
-              <Heading>Settings</Heading>
-              <Form name="settingsForm">
-                <Field label="Theme">
-                  <Dropdown name="reel" value={''+playerState.reel}>
-                    <Option value="fox">🦊 🍒 🍊 🍌 🍎</Option>
-                    <Option value="gator">🐊 🐘 🦒 🐅 🦓</Option>
-                    <Option value="frog">🐸 🍱 🍵 🍥 🍄</Option>
-                    <Option value="gem">💎 👑 💰 👠 🛍️</Option>
-                  </Dropdown>
-                </Field>
-                <Button name="save">Save</Button>
-                <Button name="start">Cancel</Button>
-              </Form>
-              <Divider/>
-              <Text> </Text>
-              <Text> </Text>
-              <Text> </Text>
-              <Text> </Text>
-              <Button name="attemptClear" variant="destructive">Reset</Button>
-            </Box>
-          ),
-        },
-      }); 
-      break; 
-    case 'attemptClear': 
-      await snap.request({
-        method: "snap_updateInterface",
-        params: { 
-          id, 
-          ui: ( 
+          ui: (
             <Box>
               <Heading>Are you sure?</Heading>
-              <Text>This will erase your game data. This cannot be undone.</Text>
-              <Box direction="horizontal" alignment="space-between">
-                <Button name="settings">Cancel</Button>
-                <Button name="clear" variant="destructive">Confirm</Button>
+              <Text>You have a game in progress. If you continue, you will lose your progress and start a new game.</Text>
+              <Box direction="horizontal" alignment="space-around">
+                <Button name="start">Go back</Button>
+                <Button name="new" variant="destructive">Continue</Button>
               </Box>
             </Box>
           ),
-        },
+        }
       }); 
       break; 
   }
 }; 
-*/
 export const onInstall: OnInstallHandler = async () => {
   await snap.request({
     method: "snap_dialog",
