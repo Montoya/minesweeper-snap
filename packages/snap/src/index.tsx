@@ -90,17 +90,20 @@ export const onHomePage: OnHomePageHandler = async () => {
         // we are at a bomb
         // let's try to add 1 to every square around this bomb 
         // we have to do 8 iterations 
-        let tmpIndex = (y-1)*boardLength+(x-1); // iteration 1
-        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-          board[tmpIndex] += 1; 
-        }
-        tmpIndex = y*boardLength+(x-1); // iteration 2 
-        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-          board[tmpIndex] += 1; 
-        }
-        tmpIndex = (y+1)*boardLength+(x-1); // iteration 3
-        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-          board[tmpIndex] += 1; 
+        let tmpIndex; 
+        if(x > 0) { 
+          tmpIndex = (y-1)*boardLength+(x-1); // iteration 1
+          if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+            board[tmpIndex] += 1; 
+          }
+          tmpIndex = y*boardLength+(x-1); // iteration 2 
+          if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+            board[tmpIndex] += 1; 
+          }
+          tmpIndex = (y+1)*boardLength+(x-1); // iteration 3
+          if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+            board[tmpIndex] += 1; 
+          }
         }
         tmpIndex = (y-1)*boardLength+x; // iteration 4
         if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
@@ -110,17 +113,19 @@ export const onHomePage: OnHomePageHandler = async () => {
         if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
           board[tmpIndex] += 1; 
         }
-        tmpIndex = (y-1)*boardLength+(x+1); // iteration 6
-        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-          board[tmpIndex] += 1; 
-        }
-        tmpIndex = y*boardLength+(x+1); // iteration 7
-        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-          board[tmpIndex] += 1; 
-        }
-        tmpIndex = (y+1)*boardLength+(x+1); // iteration 8
-        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-          board[tmpIndex] += 1; 
+        if(x < (boardLength-1)) { 
+          tmpIndex = (y-1)*boardLength+(x+1); // iteration 6
+          if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+            board[tmpIndex] += 1; 
+          }
+          tmpIndex = y*boardLength+(x+1); // iteration 7
+          if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+            board[tmpIndex] += 1; 
+          }
+          tmpIndex = (y+1)*boardLength+(x+1); // iteration 8
+          if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
+            board[tmpIndex] += 1; 
+          }
         }
       }
     }
@@ -142,6 +147,32 @@ export const onHomePage: OnHomePageHandler = async () => {
             );
           })}
   */
+  const array2d = [
+    ["a","b"],
+    ["c","d"],
+    ["e","f"]
+  ]; 
+  const interfaceId = await snap.request({
+    method: "snap_createInterface",
+      params: {
+        ui: (
+          <Box>
+            {board2D.map( (row,y) => { 
+              return ( 
+                <Box direction="horizontal" alignment="center">
+                  {row.map( (cell,x) => <Button name={"space"+x+"-"+y}>{getEmoji(cell)}</Button> )}
+                </Box>
+              ); 
+            })}
+          </Box>
+        ),
+      },
+  }); 
+  return { 
+    id: interfaceId
+  }
+
+ /*
   const interfaceId = await snap.request({
     method: "snap_createInterface",
     params: {
@@ -208,7 +239,7 @@ export const onHomePage: OnHomePageHandler = async () => {
   }); 
   return { 
     id: interfaceId
-  }
+  } */
 };
 /*
 export const onUserInput: OnUserInputHandler = async ({id, event}) => { 
