@@ -1,28 +1,9 @@
 import { type OnHomePageHandler, type OnUserInputHandler, type OnInstallHandler, UserInputEventType } from "@metamask/snaps-sdk";
-import { SnapComponent, Box, Button, Image, Heading, Text, Italic, Row, Form, Dropdown, Option, Field, Divider, Copyable, GenericSnapElement, MaybeArray, SnapElement } from '@metamask/snaps-sdk/jsx';
-/*
-const svgTitle = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200"><style>.sign{text-anchor:middle;dominant-baseline:middle;font-size:64px;font-weight:bold}</style><defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="200" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#818181"/><stop offset=".24" stop-color="#b8b8b8"/><stop offset=".51" stop-color="#f3f3f3"/><stop offset=".86" stop-color="#b4b4b4"/><stop offset="1" stop-color="#666"/></linearGradient><filter id="c" x="-50%" y="-50%" width="200%" height="200%"><feComponentTransfer in="SourceAlpha"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer><feGaussianBlur stdDeviation="4"/><feOffset dy="5" result="offsetblur"/><feFlood flood-color="#000" result="color"/><feComposite in2="offsetblur" operator="in"/><feComposite in2="SourceAlpha" operator="in"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode/></feMerge></filter><filter id="g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8 8" result="glow"/><feMerge><feMergeNode in="glow"/><feMergeNode in="glow"/><feMergeNode in="glow"/></feMerge></filter></defs><path fill="url(#a)" style="box-shadow:0 0 112px 168px inset rgba(0,0,0,.8)" d="M0 0h400v200H0z"/><rect fill="#334" filter="url(#c)" x="16" y="16" width="368" height="168"/><text x="200" y="62" class="sign" style="font-size:24px;font-weight:normal;font-family:'Comic Sans MS','Comic Sans',Charcoal,cursive" fill="white">Let's play...</text><text x="200" y="124" class="sign" fill="#ff8c00" filter="url(#g)">Slots</text><text x="200" y="124" class="sign" fill="white">Slots</text></svg>`; 
+import { SnapComponent, Box, Button, Image, Heading, Text, Italic, Row, Form, Dropdown, Option, Field, Divider, Bold } from '@metamask/snaps-sdk/jsx';
 
-type SlotProps = { 
-  one: string;
-  two: string;
-  three: string; 
-}; 
+const svgTitle = '<svg xmlns="http://www.w3.org/2000/svg" width="760" height="500" viewBox="0 0 760 500" fill="#fff"><style>.emoji{text-anchor:middle;dominant-baseline:middle;font-size:248px}.emoj{font-size:96px}</style><text class="emoji" x="200" y="182">💣</text><text class="emoji" x="560" y="182">1️⃣</text><text class="emoji" x="200" y="528">1️⃣</text><text class="emoji" x="560" y="528">1️⃣</text><path d="m189 205 22 8 144 144 6 22h-64v20l10 6 16 32v32h-32l-32-64h-16l-32 32-21 5z"/><path d="M355 357h16v32h-64v16h-16v-32h64zm0 0v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-32-16h16v-16h-16v-16h-16v272h32v-16h-16zm48 176v16h16v-16zm-16 32h16v-16h-16zm-16 16h16v-16h-16zm48-32v32h16v-32zm16 32v32h16v-32zm64 32v-32h-16v32zm-16-32v-32h-16v32zm-32 48h32v-16h-32z" fill="#000"/><text class="emoj" x="308" y="250">😭</text><text class="emoj" x="20" y="396">😵</text></svg>';
 
-const Slot: SnapComponent<SlotProps> = ({ one, two, three }) => {
-  return (
-    <Image src={svgArr[0]+one+svgArr[1]+two+svgArr[2]+three+svgArr[3]}/>
-  );
-};
-
-const StaticSlot: SnapComponent<SlotProps> = ({ one, two, three }) => { 
-  return ( 
-    <Image src={svgStaticArr[0]+one+svgStaticArr[1]+two+svgStaticArr[2]+three+svgStaticArr[3]}/>
-  );
-}
-*/
-
-function shuffleArray(array:Array<Number|undefined>) {
+function shuffleArray(array:Array<number|undefined>) {
   for (let i = array.length - 1; i > 0; i--) {
     // tslint:disable-next-line
     const j = Math.floor(crypto.getRandomValues(new Uint32Array(1))[0]/4294967296 * (i + 1));
@@ -225,6 +206,8 @@ const Board: SnapComponent<BoardProps> = ({board, state}) => {
 const Welcome: SnapComponent = () => { 
   return ( 
     <Box>
+      <Image src={svgTitle}/>
+      <Divider/>
       <Heading>Welcome to Minesweeper!</Heading>
       <Text>Try to uncover the empty spaces on the board without tripping a mine.</Text>
       <Text>Ready to play?</Text>
@@ -331,7 +314,7 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
           ui: (
             <Box>
               <Board board={playerState.board} state={event.name}/>
-              <Text><Italic>{event.name=="win" ? "You won! Want to play again?" : "Sorry, you lost. Try again?"}</Italic></Text>
+              <Text><Bold>{event.name=="win" ? "😎 You won! Want to play again?" : "😵 Sorry, you lost. Try again?"}</Bold></Text>
               <Button name="new">New game</Button>
             </Box>
           ),
@@ -372,8 +355,10 @@ export const onInstall: OnInstallHandler = async () => {
       type: "alert",
       content: (
         <Box>
-          <Text>Thank you for installing Minesweeper!</Text>
-          <Text><Italic>To play, open the MetaMask menu, then click "Snaps", then "Minesweeper".</Italic></Text>
+          <Image src={svgTitle}/>
+          <Divider/>
+          <Heading>Thanks for installing Minesweeper!</Heading>
+          <Text>To play, open the MetaMask menu, then click "Snaps", then "Minesweeper".</Text>
         </Box>
       )
     },
