@@ -30,7 +30,41 @@ function shuffleArray(array:Array<Number|undefined>) {
   }
 }
 
-function getEmoji(num:Number):string { 
+function sweep(board:Array<number|undefined>, x:number, y:number) { 
+  const boardLength = Math.sqrt(board.length); 
+  const index = y*boardLength + x; 
+  if(index >= 0 && index < board.length) { 
+    // valid space 
+    if(board[index] > 9) { 
+      // valid space to sweep 
+      board[index] -= 10; 
+      if(0==board[index]) { // empty space, keep sweeping 
+        if(x>0) { 
+          sweep(board, x-1, y-1); 
+          sweep(board, x-1, y  ); 
+          sweep(board, x-1, y+1); 
+        }
+        sweep(board, x  , y-1); 
+        sweep(board, x  , y+1); 
+        if(x<(boardLength-1)) { 
+          sweep(board, x+1, y-1); 
+          sweep(board, x+1, y  ); 
+          sweep(board, x+1, y+1); 
+        }
+      }
+    }
+  }
+}
+
+function reveal(board:Array<number|undefined>) {
+  for(let i=0; i < board.length; i++) { 
+    if(19==board[i]) { 
+      board[i] = 9; 
+    }
+  }
+}
+
+function getEmoji(num:number):string { 
   /* 
    * 9 = bomb
    * 0 = empty space 
@@ -63,7 +97,7 @@ function getEmoji(num:Number):string {
   }
 }
 
-function makeBoard():Array<Number> { 
+function makeBoard():Array<number> { 
   const board = [...new Array(10).fill(9),...new Array(71).fill(0)]; 
   shuffleArray(board); 
   // count spaces around bombs 
@@ -124,16 +158,68 @@ function makeBoard():Array<Number> {
 }
 
 type CellProps = { 
-  x: Number;
-  y: Number; 
-  val: Number;
+  x: number;
+  y: number; 
+  val: number;
 }; 
 
 const Cell: SnapComponent<CellProps> = ({x, y, val}) => { 
   if(val > 9) { 
-    return <Button name={"space"+x+"-"+y}>{getEmoji(val)}</Button>; 
+    return <Button name={"sweep"+x+"-"+y}>{getEmoji(val)}</Button>; 
   }
-  return <Text>{getEmoji(val)}</Text>; 
+  return <Button name="start">{getEmoji(val)}</Button>; 
+}
+
+type BoardProps = { 
+  board: Array<number>; 
+  state: string; 
+}
+
+const Board: SnapComponent<BoardProps> = ({board, state}) => { 
+  const boardLength = Math.sqrt(board.length);
+  // we should now have a proper board 
+  // let's slice out boardLength at a time 
+  const board2D = []; 
+  for(let i = 0; i < board.length; i += boardLength) { 
+    board2D.push( board.slice(i,i+boardLength) ); 
+  }
+  if(state=="lose") { 
+    return ( 
+      <Box>
+        {board2D.map( row => { 
+          return ( 
+            <Box direction="horizontal" alignment="center">
+              {row.map( cell => <Button name="lose">{getEmoji(cell)}</Button> )}
+            </Box>
+          ); 
+        })}
+      </Box>
+    ); 
+  }
+  else if(state=="win") { 
+    return ( 
+      <Box>
+        {board2D.map( row => { 
+          return ( 
+            <Box direction="horizontal" alignment="center">
+              {row.map( cell => <Button name="win">{(cell==19) ? '🚩' : getEmoji(cell)}</Button> )}
+            </Box>
+          ); 
+        })}
+      </Box>
+    ); 
+  }
+  return ( 
+    <Box>
+      {board2D.map( (row,y) => { 
+        return ( 
+          <Box direction="horizontal" alignment="center">
+            {row.map( (cell,x) => <Cell x={x} y={y} val={cell}/> )}
+          </Box>
+        ); 
+      })}
+    </Box>
+  ); 
 }
 
 const Welcome: SnapComponent = () => { 
@@ -142,7 +228,7 @@ const Welcome: SnapComponent = () => {
       <Heading>Welcome to Minesweeper!</Heading>
       <Text>Try to uncover the empty spaces on the board without tripping a mine.</Text>
       <Text>Ready to play?</Text>
-      <Button name="start">Start</Button>
+      <Button name="fresh">Start</Button>
     </Box>
   ); 
 }
@@ -166,53 +252,58 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
       params: { operation: "clear" },
     }); 
     event.name = "start"; 
-  }
+  } 
 
   const playerState = await snap.request({method: "snap_manageState",
     params: { operation: "get" },
   })  || { board: [] };
+
+  if(event.name=="fresh") { 
+    // new session, check if in a win or lose state 
+    if(playerState.board.length > 0) { 
+      if(playerState.board.indexOf(19)==-1) { // must have lost 
+        event.name = "lose"; 
+      }
+      else if(playerState.board.filter(el => el > 9).length < 11) { // must have won? 
+        event.name = "win";
+      } 
+      else { 
+        event.name = "start"; 
+      }
+    }
+    else { 
+      event.name = "start"; 
+    }
+  }
+
+  if(event.name?.startsWith("sweep")) { 
+    const coordinateString = event.name.slice(5); 
+    const coordinates = coordinateString.split('-')
+    const x = parseInt(''+coordinates[0]); 
+    const y = parseInt(''+coordinates[1]); 
+    sweep(playerState.board, x, y); 
+    const boardLength = Math.sqrt(playerState.board.length); 
+    const index = y*boardLength + x; 
+    if(playerState.board[index]==9) { // tripped a bomb
+      reveal(playerState.board); 
+      event.name = "lose"; 
+    }
+    else { 
+      // have we won? 
+      if(playerState.board.filter(el => el > 9).length < 11) { 
+        // there are only bombs left, the player has won 
+        event.name = "win"; 
+      }
+    }
+    await snap.request({method: "snap_manageState", 
+      params: { 
+        operation: "update",
+        newState: playerState
+      }
+    }); 
+  }
   
   switch(event.name) { 
-    case 'start': 
-    default: 
-      if(playerState.board.length < 1) { 
-        // time to make a new board 
-        playerState.board = makeBoard(); 
-        await snap.request({method: "snap_manageState",
-          params: { 
-            operation: "update", 
-            newState: playerState
-          },
-        }); 
-      }
-      const boardLength = Math.sqrt(playerState.board.length);
-      // we should now have a proper board 
-      // let's slice out boardLength at a time 
-      const board2D = []; 
-      for(let i = 0; i < playerState.board.length; i += boardLength) { 
-        board2D.push( playerState.board.slice(i,i+boardLength) ); 
-      }
-      await snap.request({
-        method: "snap_updateInterface",
-        params: {
-          id, 
-          ui: (
-            <Box>
-              <Box>
-                {board2D.map( (row,y) => { 
-                  return ( 
-                    <Box direction="horizontal" alignment="center">
-                      {row.map( (cell,x) => <Cell x={x} y={y} val={cell}/> )}
-                    </Box>
-                  ); 
-                })}
-              </Box>
-              <Button name={playerState.board.find((e) => e > 9) ? "confirmNew" : "new"}>New game</Button>
-            </Box>
-          ),
-        },
-      });
-      break; 
     case 'confirmNew': 
       await snap.request({
         method: "snap_updateInterface",
@@ -230,6 +321,47 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
           ),
         }
       }); 
+      break; 
+    case 'lose': 
+    case 'win': 
+      await snap.request({
+        method: "snap_updateInterface",
+        params: {
+          id, 
+          ui: (
+            <Box>
+              <Board board={playerState.board} state={event.name}/>
+              <Text><Italic>{event.name=="win" ? "You won! Want to play again?" : "Sorry, you lost. Try again?"}</Italic></Text>
+              <Button name="new">New game</Button>
+            </Box>
+          ),
+        },
+      });
+      break; 
+    case 'start': 
+    default: 
+      if(playerState.board.length < 1) { 
+        // time to make a new board 
+        playerState.board = makeBoard(); 
+        await snap.request({method: "snap_manageState",
+          params: { 
+            operation: "update", 
+            newState: playerState
+          },
+        }); 
+      }
+      await snap.request({
+        method: "snap_updateInterface",
+        params: {
+          id, 
+          ui: (
+            <Box>
+              <Board board={playerState.board} state="play"/>
+              <Button name="confirmNew">New game</Button>
+            </Box>
+          ),
+        },
+      });
       break; 
   }
 }; 
