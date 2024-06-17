@@ -142,21 +142,36 @@ type CellProps = {
   x: number;
   y: number; 
   val: number;
+  marks: Array<string>; 
 }; 
 
-const Cell: SnapComponent<CellProps> = ({x, y, val}) => { 
+const Cell: SnapComponent<CellProps> = ({x, y, val, marks=[]}) => { 
   if(val > 9) { 
+    if(-1!=marks.indexOf(`${x}-${y}`)) { 
+      return <Button name={"sweep"+x+"-"+y}>🚩</Button>;
+    }
     return <Button name={"sweep"+x+"-"+y}>{getEmoji(val)}</Button>; 
   }
   return <Button name="start">{getEmoji(val)}</Button>; 
 }
 
+const MarkCell: SnapComponent<CellProps> = ({x, y, val, marks=[]}) => { 
+  if(val > 9) { 
+    if(-1!=marks.indexOf(`${x}-${y}`)) { 
+      return <Button name={"marked"+x+"-"+y}>🚩</Button>;
+    }
+    return <Button name={"marked"+x+"-"+y}>{getEmoji(val)}</Button>; 
+  }
+  return <Button name="mark">{getEmoji(val)}</Button>; 
+}
+
 type BoardProps = { 
   board: Array<number>; 
   state: string; 
+  marks: Array<number>; 
 }
 
-const Board: SnapComponent<BoardProps> = ({board, state}) => { 
+const Board: SnapComponent<BoardProps> = ({board, state, marks}) => { 
   const boardLength = Math.sqrt(board.length);
   // we should now have a proper board 
   // let's slice out boardLength at a time 
@@ -190,12 +205,25 @@ const Board: SnapComponent<BoardProps> = ({board, state}) => {
       </Box>
     ); 
   }
+  else if(state=="mark") { 
+    return ( 
+      <Box>
+        {board2D.map( (row,y) => { 
+          return ( 
+            <Box direction="horizontal" alignment="center">
+              {row.map( (cell,x) => <MarkCell x={x} y={y} val={cell} marks={marks}/> )}
+            </Box>
+          ); 
+        })}
+      </Box>
+    ); 
+  }
   return ( 
     <Box>
       {board2D.map( (row,y) => { 
         return ( 
           <Box direction="horizontal" alignment="center">
-            {row.map( (cell,x) => <Cell x={x} y={y} val={cell}/> )}
+            {row.map( (cell,x) => <Cell x={x} y={y} val={cell} marks={marks}/> )}
           </Box>
         ); 
       })}
@@ -239,7 +267,7 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
 
   const playerState = await snap.request({method: "snap_manageState",
     params: { operation: "get" },
-  })  || { board: [] };
+  })  || { board: [], marks: [] };
 
   if(event.name=="fresh") { 
     // new session, check if in a win or lose state 
@@ -261,21 +289,27 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
 
   if(event.name?.startsWith("sweep")) { 
     const coordinateString = event.name.slice(5); 
-    const coordinates = coordinateString.split('-')
-    const x = parseInt(''+coordinates[0]); 
-    const y = parseInt(''+coordinates[1]); 
-    sweep(playerState.board, x, y); 
-    const boardLength = Math.sqrt(playerState.board.length); 
-    const index = y*boardLength + x; 
-    if(playerState.board[index]==9) { // tripped a bomb
-      reveal(playerState.board); 
-      event.name = "lose"; 
+    if(-1!=playerState.marks.indexOf(coordinateString)) { 
+      // this is a flagged square, remove the flag 
+      playerState.marks.splice(playerState.marks.indexOf(coordinateString), 1);
+      // and don't sweep 
     }
     else { 
-      // have we won? 
-      if(playerState.board.filter(el => el > 9).length < 11) { 
-        // there are only bombs left, the player has won 
-        event.name = "win"; 
+      const coordinates = coordinateString.split('-')
+      const x = parseInt(''+coordinates[0]); 
+      const y = parseInt(''+coordinates[1]); 
+      sweep(playerState.board, x, y); 
+      const index = y*Math.sqrt(playerState.board.length) + x; 
+      if(playerState.board[index]==9) { // tripped a bomb
+        reveal(playerState.board); 
+        event.name = "lose"; 
+      }
+      else { 
+        // have we won? 
+        if(playerState.board.filter(el => el > 9).length < 11) { 
+          // there are only bombs left, the player has won 
+          event.name = "win"; 
+        }
       }
     }
     await snap.request({method: "snap_manageState", 
@@ -284,6 +318,23 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
         newState: playerState
       }
     }); 
+  }
+  else if(event.name?.startsWith("marked")) { 
+    const markingString = event.name.slice(6); 
+    const markedIndex = playerState.marks.indexOf(markingString); 
+    if(-1==markedIndex) { 
+      playerState.marks.push(markingString); 
+    }
+    else { 
+      playerState.marks.splice(markedIndex, 1);
+    }
+    await snap.request({method: "snap_manageState", 
+      params: { 
+        operation: "update",
+        newState: playerState
+      }
+    }); 
+    event.name = "mark"; 
   }
   
   switch(event.name) { 
@@ -304,6 +355,24 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
           ),
         }
       }); 
+      break; 
+    case 'mark': 
+      await snap.request({
+        method: "snap_updateInterface",
+        params: {
+          id, 
+          ui: (
+            <Box>
+              <Board board={playerState.board} state={event.name} marks={playerState.marks}/>
+              <Box direction="horizontal" alignment="space-between">
+                <Text>Click on a 🔳 to mark it</Text>
+                <Button name="start">Back</Button>
+              </Box>
+              <Button name="new">New game</Button>
+            </Box>
+          ),
+        },
+      });
       break; 
     case 'lose': 
     case 'win': 
@@ -333,13 +402,20 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
           },
         }); 
       }
+      // get cleared % 
+      const swept = playerState.board.filter(el => el < 9).length; 
+      const clear = Math.floor((swept/71)*100); 
       await snap.request({
         method: "snap_updateInterface",
         params: {
           id, 
           ui: (
             <Box>
-              <Board board={playerState.board} state="play"/>
+              <Board board={playerState.board} state="play" marks={playerState.marks}/>
+              <Box direction="horizontal" alignment="space-between">
+                <Text>{"Cleared: "+clear+"%"}</Text>
+                <Button name="mark">Mark 🚩</Button>
+              </Box>
               <Button name="confirmNew">New game</Button>
             </Box>
           ),
