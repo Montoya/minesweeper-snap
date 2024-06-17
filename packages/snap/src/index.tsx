@@ -257,17 +257,23 @@ export const onHomePage: OnHomePageHandler = async () => {
 };
 
 export const onUserInput: OnUserInputHandler = async ({id, event}) => { 
+  const playerState = await snap.request({method: "snap_manageState",
+    params: { operation: "get" },
+  })  || { board: [], marks: [], stats: { 
+    games: 0, wins: 0
+  } };
+
   if(event.name=="new") { 
-    await snap.request({ 
-      method: "snap_manageState",
-      params: { operation: "clear" },
+    playerState.board = []; 
+    playerState.marks = []; 
+    await snap.request({method: "snap_manageState", 
+      params: { 
+        operation: "update",
+        newState: playerState
+      }
     }); 
     event.name = "start"; 
   } 
-
-  const playerState = await snap.request({method: "snap_manageState",
-    params: { operation: "get" },
-  })  || { board: [], marks: [] };
 
   if(event.name=="fresh") { 
     // new session, check if in a win or lose state 
@@ -308,6 +314,7 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
         // have we won? 
         if(playerState.board.filter(el => el > 9).length < 11) { 
           // there are only bombs left, the player has won 
+          playerState.stats.wins += 1; 
           event.name = "win"; 
         }
       }
@@ -338,6 +345,26 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
   }
   
   switch(event.name) { 
+    case 'stats': 
+      await snap.request({
+        method: "snap_updateInterface",
+        params: {
+          id, 
+          ui: (
+            <Box>
+              <Heading>Stats</Heading>
+              <Row label="Games played"><Text>{''+playerState.stats.games}</Text></Row>
+              <Row label="Games won"><Text>{''+playerState.stats.wins}</Text></Row>
+              <Row label="Success rate"><Text>{(Math.round(playerState.stats.wins * 100) / playerState.stats.games).toFixed(2)+'%'}</Text></Row>
+              <Divider/>
+              <Box direction="horizontal" alignment="space-around">
+                <Button name="fresh">Go back</Button>
+              </Box>
+            </Box>
+          ),
+        }
+      }); 
+      break; 
     case 'confirmNew': 
       await snap.request({
         method: "snap_updateInterface",
@@ -384,7 +411,10 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
             <Box>
               <Board board={playerState.board} state={event.name}/>
               <Text><Bold>{event.name=="win" ? "😎 You won! Want to play again?" : "😵 Sorry, you lost. Try again?"}</Bold></Text>
-              <Button name="new">New game</Button>
+              <Box direction="horizontal" alignment="space-around">
+                <Button name="new">New game</Button>
+                <Button name="stats">📊</Button>
+              </Box>
             </Box>
           ),
         },
@@ -395,6 +425,7 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
       if(playerState.board.length < 1) { 
         // time to make a new board 
         playerState.board = makeBoard(); 
+        playerState.stats.games += 1; 
         await snap.request({method: "snap_manageState",
           params: { 
             operation: "update", 
@@ -416,7 +447,10 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
                 <Text>{"Cleared: "+clear+"%"}</Text>
                 <Button name="mark">Mark 🚩</Button>
               </Box>
-              <Button name="confirmNew">New game</Button>
+              <Box direction="horizontal" alignment="space-around">
+                <Button name="confirmNew">New game</Button>
+                <Button name="stats">📊</Button>
+              </Box>
             </Box>
           ),
         },
