@@ -1,476 +1,127 @@
-import { type OnHomePageHandler, type OnUserInputHandler, type OnInstallHandler, UserInputEventType } from "@metamask/snaps-sdk";
-import { SnapComponent, Box, Button, Image, Heading, Text, Italic, Row, Form, Dropdown, Option, Field, Divider, Bold } from '@metamask/snaps-sdk/jsx';
+import type { OnHomePageHandler, OnUserInputHandler } from "@metamask/snaps-sdk";
+import { Box, Form, Input, Button, Copyable, Divider } from "@metamask/snaps-sdk/jsx";
+import { UserInputEventType } from "@metamask/snaps-sdk";
+import type { SnapComponent } from '@metamask/snaps-sdk/jsx';
 
-const svgTitle = '<svg xmlns="http://www.w3.org/2000/svg" width="760" height="500" viewBox="0 0 760 500" fill="#fff"><style>.emoji{text-anchor:middle;dominant-baseline:middle;font-size:248px}.emoj{font-size:96px}</style><text class="emoji" x="200" y="182">💣</text><text class="emoji" x="560" y="182">1️⃣</text><text class="emoji" x="200" y="528">1️⃣</text><text class="emoji" x="560" y="528">1️⃣</text><path d="m189 205 22 8 144 144 6 22h-64v20l10 6 16 32v32h-32l-32-64h-16l-32 32-21 5z"/><path d="M355 357h16v32h-64v16h-16v-32h64zm0 0v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-32-16h16v-16h-16v-16h-16v272h32v-16h-16zm48 176v16h16v-16zm-16 32h16v-16h-16zm-16 16h16v-16h-16zm48-32v32h16v-32zm16 32v32h16v-32zm64 32v-32h-16v32zm-16-32v-32h-16v32zm-32 48h32v-16h-32z" fill="#000"/><text class="emoj" x="308" y="250">😭</text><text class="emoj" x="20" y="396">😵</text></svg>';
+// Unicode code points for bold serif letters (A-Z, a-z)
+const boldSerifMap = {
+  'A': '𝐀', 'B': '𝐁', 'C': '𝐂', 'D': '𝐃', 'E': '𝐄', 
+  'F': '𝐅', 'G': '𝐆', 'H': '𝐇', 'I': '𝐈', 'J': '𝐉', 
+  'K': '𝐊', 'L': '𝐋', 'M': '𝐌', 'N': '𝐍', 'O': '𝐎', 
+  'P': '𝐏', 'Q': '𝐐', 'R': '𝐑', 'S': '𝐒', 'T': '𝐓', 
+  'U': '𝐔', 'V': '𝐕', 'W': '𝐖', 'X': '𝐗', 'Y': '𝐘', 'Z': '𝐙',
+  'a': '𝐚', 'b': '𝐛', 'c': '𝐜', 'd': '𝐝', 'e': '𝐞', 
+  'f': '𝐟', 'g': '𝐠', 'h': '𝐡', 'i': '𝐢', 'j': '𝐣', 
+  'k': '𝐤', 'l': '𝐥', 'm': '𝐦', 'n': '𝐧', 'o': '𝐨', 
+  'p': '𝐩', 'q': '𝐪', 'r': '𝐫', 's': '𝐬', 't': '𝐭', 
+  'u': '𝐮', 'v': '𝐯', 'w': '𝐰', 'x': '𝐱', 'y': '𝐲', 'z': '𝐳'
+};
 
-function shuffleArray(array:Array<number|undefined>) {
-  for (let i = array.length - 1; i > 0; i--) {
-    // tslint:disable-next-line
-    const j = Math.floor(crypto.getRandomValues(new Uint32Array(1))[0]/4294967296 * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
+// Bold sans-serif letters (A-Z, a-z) as actual Unicode characters
+const boldSansSerifMap = {
+  'A': '𝗔', 'B': '𝗕', 'C': '𝗖', 'D': '𝗗', 'E': '𝗘', 
+  'F': '𝗙', 'G': '𝗚', 'H': '𝗛', 'I': '𝗜', 'J': '𝗝', 
+  'K': '𝗞', 'L': '𝗟', 'M': '𝗠', 'N': '𝗡', 'O': '𝗢', 
+  'P': '𝗣', 'Q': '𝗤', 'R': '𝗥', 'S': '𝗦', 'T': '𝗧', 
+  'U': '𝗨', 'V': '𝗩', 'W': '𝗪', 'X': '𝗫', 'Y': '𝗬', 'Z': '𝗭',
+  'a': '𝗮', 'b': '𝗯', 'c': '𝗰', 'd': '𝗱', 'e': '𝗲', 
+  'f': '𝗳', 'g': '𝗴', 'h': '𝗵', 'i': '𝗶', 'j': '𝗷', 
+  'k': '𝗸', 'l': '𝗹', 'm': '𝗺', 'n': '𝗻', 'o': '𝗼', 
+  'p': '𝗽', 'q': '𝗾', 'r': '𝗿', 's': '𝘀', 't': '𝘁', 
+  'u': '𝘂', 'v': '𝘃', 'w': '𝘄', 'x': '𝘅', 'y': '𝘆', 'z': '𝘇'
+};
+
+const doubleStruckMap = {
+  'A': '𝔸', 'B': '𝔹', 'C': 'ℂ', 'D': '𝔻', 'E': '𝔼', 
+  'F': '𝔽', 'G': '𝔾', 'H': 'ℍ', 'I': '𝕀', 'J': '𝕁', 
+  'K': '𝕂', 'L': '𝕃', 'M': '𝕄', 'N': 'ℕ', 'O': '𝕆', 
+  'P': 'ℙ', 'Q': 'ℚ', 'R': 'ℝ', 'S': '𝕊', 'T': '𝕋', 
+  'U': '𝕌', 'V': '𝕍', 'W': '𝕎', 'X': '𝕏', 'Y': '𝕐', 'Z': 'ℤ',
+  'a': '𝕒', 'b': '𝕓', 'c': '𝕔', 'd': '𝕕', 'e': '𝕖', 
+  'f': '𝕗', 'g': '𝕘', 'h': '𝕙', 'i': '𝕚', 'j': '𝕛', 
+  'k': '𝕜', 'l': '𝕝', 'm': '𝕞', 'n': '𝕟', 'o': '𝕠', 
+  'p': '𝕡', 'q': '𝕢', 'r': '𝕣', 's': '𝕤', 't': '𝕥', 
+  'u': '𝕦', 'v': '𝕧', 'w': '𝕨', 'x': '𝕩', 'y': '𝕪', 'z': '𝕫'
+};
+
+const italicMap = {
+  'A': '𝐴', 'B': '𝐵', 'C': '𝐶', 'D': '𝐷', 'E': '𝐸', 
+  'F': '𝐹', 'G': '𝐺', 'H': '𝐻', 'I': '𝐼', 'J': '𝐽', 
+  'K': '𝐾', 'L': '𝐿', 'M': '𝑀', 'N': '𝑁', 'O': '𝑂', 
+  'P': '𝑃', 'Q': '𝑄', 'R': '𝑅', 'S': '𝑆', 'T': '𝑇', 
+  'U': '𝑈', 'V': '𝑉', 'W': '𝑊', 'X': '𝑋', 'Y': '𝑌', 'Z': '𝑍',
+  'a': '𝑎', 'b': '𝑏', 'c': '𝑐', 'd': '𝑑', 'e': '𝑒', 
+  'f': '𝑓', 'g': '𝑔', 'h': 'ℎ', 'i': '𝑖', 'j': '𝑗', 
+  'k': '𝑘', 'l': '𝑙', 'm': '𝑚', 'n': '𝑛', 'o': '𝑜', 
+  'p': '𝑝', 'q': '𝑞', 'r': '𝑟', 's': '𝑠', 't': '𝑡', 
+  'u': '𝑢', 'v': '𝑣', 'w': '𝑤', 'x': '𝑥', 'y': '𝑦', 'z': '𝑧'
+};
+
+const medievalMap = {
+  'A': '𝔄', 'B': '𝔅', 'C': 'ℭ', 'D': '𝔇', 'E': '𝔈', 
+  'F': '𝔉', 'G': '𝔊', 'H': 'ℌ', 'I': 'ℑ', 'J': '𝔍', 
+  'K': '𝔎', 'L': '𝔏', 'M': '𝔐', 'N': '𝔑', 'O': '𝔒', 
+  'P': '𝔓', 'Q': '𝔔', 'R': 'ℜ', 'S': '𝔖', 'T': '𝔗', 
+  'U': '𝔘', 'V': '𝔙', 'W': '𝔚', 'X': '𝔛', 'Y': '𝔜', 'Z': 'ℨ',
+  'a': '𝔞', 'b': '𝔟', 'c': '𝔠', 'd': '𝔡', 'e': '𝔢', 
+  'f': '𝔣', 'g': '𝔤', 'h': '𝔥', 'i': '𝔦', 'j': '𝔧', 
+  'k': '𝔨', 'l': '𝔩', 'm': '𝔪', 'n': '𝔫', 'o': '𝔬', 
+  'p': '𝔭', 'q': '𝔮', 'r': '𝔯', 's': '𝔰', 't': '𝔱', 
+  'u': '𝔲', 'v': '𝔳', 'w': '𝔴', 'x': '𝔵', 'y': '𝔶', 'z': '𝔷'
+};
+
+const smallCapsMap = {
+  'a': 'ᴀ', 'b': 'ʙ', 'c': 'ᴄ', 'd': 'ᴅ', 'e': 'ᴇ', 
+  'f': 'ꜰ', 'g': 'ɢ', 'h': 'ʜ', 'i': 'ɪ', 'j': 'ᴊ', 
+  'k': 'ᴋ', 'l': 'ʟ', 'm': 'ᴍ', 'n': 'ɴ', 'o': 'ᴏ', 
+  'p': 'ᴘ', 'q': 'ǫ', 'r': 'ʀ', 's': 'ꜱ', 't': 'ᴛ', 
+  'u': 'ᴜ', 'v': 'ᴠ', 'w': 'ᴡ', 'x': 'x', 'y': 'ʏ', 'z': 'ᴢ'
+};
+
+// Function to transform input text using a given font map
+function transformToFont(text:string, fontMap:any) {
+  return text.split('').map(char => fontMap[char] || char).join('');
 }
 
-function sweep(board:Array<number|undefined>, x:number, y:number) { 
-  const boardLength = Math.sqrt(board.length); 
-  const index = y*boardLength + x; 
-  if(index >= 0 && index < board.length) { 
-    // valid space 
-    if(board[index] > 9) { 
-      // valid space to sweep 
-      board[index] -= 10; 
-      if(0==board[index]) { // empty space, keep sweeping 
-        if(x>0) { 
-          sweep(board, x-1, y-1); 
-          sweep(board, x-1, y  ); 
-          sweep(board, x-1, y+1); 
-        }
-        sweep(board, x  , y-1); 
-        sweep(board, x  , y+1); 
-        if(x<(boardLength-1)) { 
-          sweep(board, x+1, y-1); 
-          sweep(board, x+1, y  ); 
-          sweep(board, x+1, y+1); 
-        }
-      }
-    }
-  }
-}
-
-function reveal(board:Array<number|undefined>) {
-  for(let i=0; i < board.length; i++) { 
-    if(19==board[i]) { 
-      board[i] = 9; 
-    }
-  }
-}
-
-function getEmoji(num:number):string { 
-  /* 
-   * 9 = bomb
-   * 0 = empty space 
-   * 1-8 = adjacent # of bombs
-   * 10+ = hidden space 
-   */
-  switch(num) { 
-    case 0: 
-      return '⬜'; 
-    case 1: 
-      return '1️⃣'; 
-    case 2: 
-      return '2️⃣'; 
-    case 3: 
-      return '3️⃣'; 
-    case 4: 
-      return '4️⃣'; 
-    case 5: 
-      return '5️⃣'; 
-    case 6: 
-      return '6️⃣'; 
-    case 7: 
-      return '7️⃣'; 
-    case 8: 
-      return '8️⃣'; 
-    case 9: 
-      return '💣'; 
-    default: 
-      return '🔳'; 
-  }
-}
-
-function makeBoard():Array<number> { 
-  const board = [...new Array(10).fill(9),...new Array(71).fill(0)]; 
-  shuffleArray(board); 
-  // count spaces around bombs 
-  const boardLength = Math.sqrt(board.length); // must be a square number... 
-  for(let x = 0; x < boardLength; x++) { 
-    for(let y = 0; y < boardLength; y++) { 
-      // walk array 
-      const index = y*boardLength+x; 
-      if(board[index]==9) { 
-        // we are at a bomb
-        // let's try to add 1 to every square around this bomb 
-        // we have to do 8 iterations 
-        let tmpIndex; 
-        if(x > 0) { 
-          tmpIndex = (y-1)*boardLength+(x-1); // iteration 1
-          if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-            board[tmpIndex] += 1; 
-          }
-          tmpIndex = y*boardLength+(x-1); // iteration 2 
-          if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-            board[tmpIndex] += 1; 
-          }
-          tmpIndex = (y+1)*boardLength+(x-1); // iteration 3
-          if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-            board[tmpIndex] += 1; 
-          }
-        }
-        tmpIndex = (y-1)*boardLength+x; // iteration 4
-        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-          board[tmpIndex] += 1; 
-        }
-        tmpIndex = (y+1)*boardLength+x; // iteration 5
-        if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-          board[tmpIndex] += 1; 
-        }
-        if(x < (boardLength-1)) { 
-          tmpIndex = (y-1)*boardLength+(x+1); // iteration 6
-          if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-            board[tmpIndex] += 1; 
-          }
-          tmpIndex = y*boardLength+(x+1); // iteration 7
-          if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-            board[tmpIndex] += 1; 
-          }
-          tmpIndex = (y+1)*boardLength+(x+1); // iteration 8
-          if(tmpIndex >= 0 && tmpIndex < board.length && board[tmpIndex] < 9) { 
-            board[tmpIndex] += 1; 
-          }
-        }
-      }
-    }
-  }
-  // finally, increment every space by 10 
-  for(let i = 0; i < board.length; i++) { 
-    board[i] += 10; 
-  }
-  return board; 
-}
-
-type CellProps = { 
-  x: number;
-  y: number; 
-  val: number;
-  marks: Array<string>; 
-}; 
-
-const Cell: SnapComponent<CellProps> = ({x, y, val, marks=[]}) => { 
-  if(val > 9) { 
-    if(-1!=marks.indexOf(`${x}-${y}`)) { 
-      return <Button name={"sweep"+x+"-"+y}>🚩</Button>;
-    }
-    return <Button name={"sweep"+x+"-"+y}>{getEmoji(val)}</Button>; 
-  }
-  return <Button name="start">{getEmoji(val)}</Button>; 
-}
-
-const MarkCell: SnapComponent<CellProps> = ({x, y, val, marks=[]}) => { 
-  if(val > 9) { 
-    if(-1!=marks.indexOf(`${x}-${y}`)) { 
-      return <Button name={"marked"+x+"-"+y}>🚩</Button>;
-    }
-    return <Button name={"marked"+x+"-"+y}>{getEmoji(val)}</Button>; 
-  }
-  return <Button name="mark">{getEmoji(val)}</Button>; 
-}
-
-type BoardProps = { 
-  board: Array<number>; 
-  state: string; 
-  marks: Array<number>; 
-}
-
-const Board: SnapComponent<BoardProps> = ({board, state, marks}) => { 
-  const boardLength = Math.sqrt(board.length);
-  // we should now have a proper board 
-  // let's slice out boardLength at a time 
-  const board2D = []; 
-  for(let i = 0; i < board.length; i += boardLength) { 
-    board2D.push( board.slice(i,i+boardLength) ); 
-  }
-  if(state=="lose") { 
-    return ( 
-      <Box>
-        {board2D.map( row => { 
-          return ( 
-            <Box direction="horizontal" alignment="center">
-              {row.map( cell => <Button name="lose">{getEmoji(cell)}</Button> )}
-            </Box>
-          ); 
-        })}
+const InteractiveForm: SnapComponent = () => {
+  return (
+    <Form name="input-form">
+      <Box direction="horizontal" alignment="space-between">
+        <Input name="input-text" placeholder="Your text" />
+        <Button type="submit">Transform</Button>
       </Box>
-    ); 
-  }
-  else if(state=="win") { 
-    return ( 
-      <Box>
-        {board2D.map( row => { 
-          return ( 
-            <Box direction="horizontal" alignment="center">
-              {row.map( cell => <Button name="win">{(cell==19) ? '🚩' : getEmoji(cell)}</Button> )}
-            </Box>
-          ); 
-        })}
-      </Box>
-    ); 
-  }
-  else if(state=="mark") { 
-    return ( 
-      <Box>
-        {board2D.map( (row,y) => { 
-          return ( 
-            <Box direction="horizontal" alignment="center">
-              {row.map( (cell,x) => <MarkCell x={x} y={y} val={cell} marks={marks}/> )}
-            </Box>
-          ); 
-        })}
-      </Box>
-    ); 
-  }
-  return ( 
-    <Box>
-      {board2D.map( (row,y) => { 
-        return ( 
-          <Box direction="horizontal" alignment="center">
-            {row.map( (cell,x) => <Cell x={x} y={y} val={cell} marks={marks}/> )}
-          </Box>
-        ); 
-      })}
-    </Box>
-  ); 
-}
-
-const Welcome: SnapComponent = () => { 
-  return ( 
-    <Box>
-      <Image src={svgTitle}/>
-      <Divider/>
-      <Heading>Welcome to Minesweeper!</Heading>
-      <Text>Try to uncover the empty spaces on the board without tripping a mine.</Text>
-      <Text>Ready to play?</Text>
-      <Button name="fresh">Start</Button>
-    </Box>
-  ); 
-}
+    </Form>
+  );
+};
 
 export const onHomePage: OnHomePageHandler = async () => {
-  const interfaceId = await snap.request({ 
-    method: "snap_createInterface",
-    params: {
-      ui: <Welcome/>
-    }
-  }); 
-  return { 
-    id: interfaceId
-  }
+  return {
+    content: (
+      <Box>
+        <InteractiveForm />
+      </Box>
+    ),
+  };
 };
 
-export const onUserInput: OnUserInputHandler = async ({id, event}) => { 
-  const playerState = await snap.request({method: "snap_manageState",
-    params: { operation: "get" },
-  })  || { board: [], marks: [], stats: { 
-    games: 0, wins: 0
-  } };
-
-  if(event.name=="new") { 
-    playerState.board = []; 
-    playerState.marks = []; 
-    await snap.request({method: "snap_manageState", 
-      params: { 
-        operation: "update",
-        newState: playerState
-      }
-    }); 
-    event.name = "start"; 
-  } 
-
-  if(event.name=="fresh") { 
-    // new session, check if in a win or lose state 
-    if(playerState.board.length > 0) { 
-      if(playerState.board.indexOf(19)==-1) { // must have lost 
-        event.name = "lose"; 
-      }
-      else if(playerState.board.filter(el => el > 9).length < 11) { // must have won? 
-        event.name = "win";
-      } 
-      else { 
-        event.name = "start"; 
-      }
-    }
-    else { 
-      event.name = "start"; 
-    }
+export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
+  if (event.type === UserInputEventType.FormSubmitEvent) {
+    await snap.request({
+      method: "snap_updateInterface",
+      params: {
+        id,
+        ui: (
+          <Box>
+            <InteractiveForm />
+            <Copyable value={transformToFont(''+event.value['input-text'],boldSerifMap)}/>
+            <Copyable value={transformToFont(''+event.value['input-text'],boldSansSerifMap)}/>
+            <Copyable value={transformToFont(''+event.value['input-text'],doubleStruckMap)}/>
+            <Copyable value={transformToFont(''+event.value['input-text'],italicMap)}/>
+            <Copyable value={transformToFont(''+event.value['input-text'],medievalMap)}/>
+            <Copyable value={transformToFont(''+event.value['input-text'],smallCapsMap)}/>
+          </Box>
+        )
+      },
+    });
   }
-
-  if(event.name?.startsWith("sweep")) { 
-    const coordinateString = event.name.slice(5); 
-    if(-1!=playerState.marks.indexOf(coordinateString)) { 
-      // this is a flagged square, remove the flag 
-      playerState.marks.splice(playerState.marks.indexOf(coordinateString), 1);
-      // and don't sweep 
-    }
-    else { 
-      const coordinates = coordinateString.split('-')
-      const x = parseInt(''+coordinates[0]); 
-      const y = parseInt(''+coordinates[1]); 
-      sweep(playerState.board, x, y); 
-      const index = y*Math.sqrt(playerState.board.length) + x; 
-      if(playerState.board[index]==9) { // tripped a bomb
-        reveal(playerState.board); 
-        event.name = "lose"; 
-      }
-      else { 
-        // have we won? 
-        if(playerState.board.filter(el => el > 9).length < 11) { 
-          // there are only bombs left, the player has won 
-          playerState.stats.wins += 1; 
-          event.name = "win"; 
-        }
-      }
-    }
-    await snap.request({method: "snap_manageState", 
-      params: { 
-        operation: "update",
-        newState: playerState
-      }
-    }); 
-  }
-  else if(event.name?.startsWith("marked")) { 
-    const markingString = event.name.slice(6); 
-    const markedIndex = playerState.marks.indexOf(markingString); 
-    if(-1==markedIndex) { 
-      playerState.marks.push(markingString); 
-    }
-    else { 
-      playerState.marks.splice(markedIndex, 1);
-    }
-    await snap.request({method: "snap_manageState", 
-      params: { 
-        operation: "update",
-        newState: playerState
-      }
-    }); 
-    event.name = "mark"; 
-  }
-  
-  switch(event.name) { 
-    case 'stats': 
-      await snap.request({
-        method: "snap_updateInterface",
-        params: {
-          id, 
-          ui: (
-            <Box>
-              <Heading>Stats</Heading>
-              <Row label="Games played"><Text>{''+playerState.stats.games}</Text></Row>
-              <Row label="Games won"><Text>{''+playerState.stats.wins}</Text></Row>
-              <Row label="Success rate"><Text>{(Math.round(playerState.stats.wins * 100) / playerState.stats.games).toFixed(2)+'%'}</Text></Row>
-              <Divider/>
-              <Box direction="horizontal" alignment="space-around">
-                <Button name="fresh">Go back</Button>
-              </Box>
-            </Box>
-          ),
-        }
-      }); 
-      break; 
-    case 'confirmNew': 
-      await snap.request({
-        method: "snap_updateInterface",
-        params: {
-          id, 
-          ui: (
-            <Box>
-              <Heading>Are you sure?</Heading>
-              <Text>You have a game in progress. If you continue, you will lose your progress and start a new game.</Text>
-              <Box direction="horizontal" alignment="space-around">
-                <Button name="start">Go back</Button>
-                <Button name="new" variant="destructive">Continue</Button>
-              </Box>
-            </Box>
-          ),
-        }
-      }); 
-      break; 
-    case 'mark': 
-      await snap.request({
-        method: "snap_updateInterface",
-        params: {
-          id, 
-          ui: (
-            <Box>
-              <Board board={playerState.board} state={event.name} marks={playerState.marks}/>
-              <Box direction="horizontal" alignment="space-between">
-                <Text>Click on a 🔳 to mark it</Text>
-                <Button name="start">Back</Button>
-              </Box>
-              <Button name="new">New game</Button>
-            </Box>
-          ),
-        },
-      });
-      break; 
-    case 'lose': 
-    case 'win': 
-      await snap.request({
-        method: "snap_updateInterface",
-        params: {
-          id, 
-          ui: (
-            <Box>
-              <Board board={playerState.board} state={event.name}/>
-              <Text><Bold>{event.name=="win" ? "😎 You won! Want to play again?" : "😵 Sorry, you lost. Try again?"}</Bold></Text>
-              <Box direction="horizontal" alignment="space-around">
-                <Button name="new">New game</Button>
-                <Button name="stats">📊</Button>
-              </Box>
-            </Box>
-          ),
-        },
-      });
-      break; 
-    case 'start': 
-    default: 
-      if(playerState.board.length < 1) { 
-        // time to make a new board 
-        playerState.board = makeBoard(); 
-        playerState.stats.games += 1; 
-        await snap.request({method: "snap_manageState",
-          params: { 
-            operation: "update", 
-            newState: playerState
-          },
-        }); 
-      }
-      // get cleared % 
-      const swept = playerState.board.filter(el => el < 9).length; 
-      const clear = Math.floor((swept/71)*100); 
-      await snap.request({
-        method: "snap_updateInterface",
-        params: {
-          id, 
-          ui: (
-            <Box>
-              <Board board={playerState.board} state="play" marks={playerState.marks}/>
-              <Box direction="horizontal" alignment="space-between">
-                <Text>{"Cleared: "+clear+"%"}</Text>
-                <Button name="mark">Mark 🚩</Button>
-              </Box>
-              <Box direction="horizontal" alignment="space-around">
-                <Button name="confirmNew">New game</Button>
-                <Button name="stats">📊</Button>
-              </Box>
-            </Box>
-          ),
-        },
-      });
-      break; 
-  }
-}; 
-export const onInstall: OnInstallHandler = async () => {
-  await snap.request({
-    method: "snap_dialog",
-    params: {
-      type: "alert",
-      content: (
-        <Box>
-          <Image src={svgTitle}/>
-          <Divider/>
-          <Heading>Thanks for installing Minesweeper!</Heading>
-          <Text>To play, open the MetaMask menu, then click "Snaps", then "Minesweeper".</Text>
-        </Box>
-      )
-    },
-  });
-};
+}
