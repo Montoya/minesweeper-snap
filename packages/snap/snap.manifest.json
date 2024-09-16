@@ -1,24 +1,27 @@
 {
-  "version": "1.0.1",
-  "description": "Transform your text!",
-  "proposedName": "Text Transformer",
+  "version": "0.1.0",
+  "description": "Are you brave enough to click?",
+  "proposedName": "Minesweeper",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Montoya/transformer-snap.git"
+    "url": "https://github.com/Montoya/minesweeper-snap.git"
   },
   "source": {
-    "shasum": "AQ51+EuV4nFhTbEprlUgfnFrlYh65sV7T6Cey62eWvc=",
+    "shasum": "Je0tJJFYARXSeqU1UcJsRyqEJ5WdTXp6V0pwF8yeLoA=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
-        "iconPath": "img/transform-icon.svg",
-        "packageName": "transformer-snap",
+        "iconPath": "images/icon.svg",
+        "packageName": "minesweeper-snap",
         "registry": "https://registry.npmjs.org/"
       }
     }
   },
   "initialPermissions": {
-    "endowment:page-home": {}
+    "endowment:page-home": {},
+    "snap_manageState": {},
+    "endowment:lifecycle-hooks": {},
+    "snap_dialog": {}
   },
   "manifestVersion": "0.1"
 }
