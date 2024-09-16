@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <title>Text Transformer Snap</title>
+      <link rel="icon" type="image/x-icon" href="icon.png">
+      <meta charset="utf-8"/>
+      <meta name="viewport" content="width=device-width"/>
+      <meta property="og:title" content="Text Transformer Snap install page" />
+      <link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre.min.css">
+      <style type="text/css">
+        body { 
+          display:flex;
+          justify-content:center;
+          align-items:center;
+          height:100vh;
+          background-color:#fff;
+        }
+        #page { 
+          width:480px;
+        }
+        #demo { 
+          display:none; 
+        }
+        h1 { 
+          font-size:1.5rem;
+          line-height:64px; 
+          padding:0;
+          margin-bottom:16px;
+        }
+        #icon { display:inline-block; width:48px; height:48px; border-radius:24px; border:1px solid #000; overflow:hidden;}
+        h1 #icon { 
+          vertical-align:middle;
+          margin-top:-12px; 
+        }
+        h2 { 
+          font-size:1.125rem;
+          font-weight:bold;
+        }
+        #footer { 
+          position:fixed;
+          width:480px; 
+          bottom:0;
+          left:50%;
+          margin-left:-240px;
+          padding-bottom:24px; 
+        }
+        #links { 
+          float:right; 
+        }
+        a, a:link { 
+          color:#2196f3 !important; 
+        }
+        .btn { 
+          border-radius:6px; 
+          background-color:rgb(3, 125, 214); 
+        }
+        .btn.btn-primary { 
+          background-color:rgb(3, 125, 214); 
+          border-color:rgb(3, 125, 214); 
+        }
+        .btn.btn-primary:hover { 
+          background-color:rgb(21, 101, 192); 
+          border-color:rgb(21, 101, 192); 
+        }
+        @media only screen and (min-width: 900px) {
+          #page { 
+            width:900px; 
+          }
+          #demo { 
+            display:block;
+            float:right;
+            margin-left:36px; 
+            width:357px; 
+            height:600px; 
+            overflow:hidden; 
+            border:1px solid #ccc; 
+          }
+          #demo video { 
+            margin-top:-1px; 
+          }
+          h1 { 
+            margin-top:140px; 
+          }
+        }
+      </style>
+  </head>
+  <body>
+    <div id="page">
+      <div id="demo">
+        <video width="350" height="540" autoplay loop muted>
+          <source src="demo.mp4" type="video/mp4" />
+        </video>
+      </div>
+      <h1><span id="icon"><img src="icon.png" width="48" height="48" alt=""></span> Text Transformer</h1>
+      <p>𝔗𝔯𝔞𝔫𝔰𝔣𝔬𝔯𝔪 𝑦𝑜𝑢𝑟 𝕥𝕖𝕩𝕥 in MetaMask.</em></p>
+      <p id="loading">Loading...</p>
+      <p>After installing the Snap, open the Snaps menu in MetaMask and click on Text Transformer to try it.</p>
+    </div>
+    <div id="footer">
+      Powered by <a href="https://metamask.io/snaps/">MetaMask Snaps</a> &bull; 
+      <a href="https://github.com/Montoya/transformer">Source Code</a>
+    </div>
+    
+    <script type="text/javascript">
+
+const snapId = 'npm:transformer-snap';
+const snapName = 'Text Transformer';
+const snapVersion = '1.0.1';  
+
+/* 
+ * Use EIP-6963 to detect MetaMask
+ */
+
+const MetaMaskFound = async (providerDetail) => { 
+
+  document.getElementById('loading').className = "found"; 
+
+  const btn = document.createElement("button"); 
+  btn.className = "btn btn-primary btn-lg"; 
+  btn.textContent = "Install "+snapName; 
+
+  const provider = providerDetail.provider; 
+
+  btn.onclick = async (event) => { 
+    event.preventDefault(); 
+    try { 
+      const result = await provider.request({ 
+        method: 'wallet_requestSnaps', 
+        params: 
+        {
+          [snapId]: { 
+            version: snapVersion
+          }
+        },
+      }); 
+
+      if(result) { 
+        try { 
+          const snaps = await provider.request({
+            method: 'wallet_getSnaps',
+          }); 
+          if( Object.keys(snaps).includes(snapId) ) { 
+            // the snap is installed and connected 
+            btn.textContent = "Installed!"; 
+            btn.onclick = null; 
+            btn.disabled = true; 
+          }
+          else { 
+            // the snap was not installed 
+          }
+        }
+        catch { }
+      }
+    }
+    catch { }
+  }; 
+  document.getElementById('loading').textContent = "";
+  document.getElementById('loading').appendChild(btn); 
+
+}; 
+
+window.onload = function() {
+
+  window.addEventListener(
+    "eip6963:announceProvider",
+    (event) => {
+      /* event.detail contains the discovered provider interface */ 
+      const providerDetail = event.detail; 
+      
+      /* 
+       * You could take one of these cases and use it for your needs,
+       * or set up a conditional that takes any of these possibilities, 
+       * or prompt the user to choose which MetaMask flavor they want to use 
+       * in case they have multiple MetaMask extensions installed at the same time
+       */
+      if(providerDetail.info.rdns == "io.metamask") { 
+        /* this is MetaMask */
+        MetaMaskFound(providerDetail); 
+      }
+      else if(providerDetail.info.rdns == "io.metamask.flask") { 
+        /* this is MetaMask Flask */ 
+        MetaMaskFound(providerDetail); 
+      }
+      else if(providerDetail.info.rdns == "io.metamask.mmi") { 
+        /* this is MetaMask Institutional */ 
+        MetaMaskFound(providerDetail); 
+      }
+    }
+  );
+
+  window.dispatchEvent(new Event("eip6963:requestProvider"));
+
+  setTimeout(() => { 
+    if("found"!==document.getElementById('loading').className) { 
+      /* Assume MetaMask was not detected */
+      document.getElementById('loading').textContent = ""; 
+      document.getElementById('loading').insertAdjacentHTML("afterbegin", "Please install <a href='https://metamask.io/'>MetaMask</a> first.");  
+    }
+  }, 1000)
+
+}
+
+    </script>
+  </body>
+</html>
