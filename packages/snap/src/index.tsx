@@ -1,5 +1,5 @@
 import { type OnHomePageHandler, type OnUserInputHandler, type OnInstallHandler, UserInputEventType } from "@metamask/snaps-sdk";
-import { SnapComponent, Box, Button, Image, Heading, Text, Italic, Row, Form, Dropdown, Option, Field, Divider, Bold } from '@metamask/snaps-sdk/jsx';
+import { SnapComponent, Box, Section, Button, Image, Heading, Text, Italic, Row, Form, Dropdown, Option, Field, Divider, Bold } from '@metamask/snaps-sdk/jsx';
 
 const svgTitle = '<svg xmlns="http://www.w3.org/2000/svg" width="760" height="500" viewBox="0 0 760 500" fill="#fff"><style>.emoji{text-anchor:middle;dominant-baseline:middle;font-size:248px}.emoj{font-size:96px}</style><text class="emoji" x="200" y="182">💣</text><text class="emoji" x="560" y="182">1️⃣</text><text class="emoji" x="200" y="528">1️⃣</text><text class="emoji" x="560" y="528">1️⃣</text><path d="m189 205 22 8 144 144 6 22h-64v20l10 6 16 32v32h-32l-32-64h-16l-32 32-21 5z"/><path d="M355 357h16v32h-64v16h-16v-32h64zm0 0v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-16-16v-16h-16v16zm-32-16h16v-16h-16v-16h-16v272h32v-16h-16zm48 176v16h16v-16zm-16 32h16v-16h-16zm-16 16h16v-16h-16zm48-32v32h16v-32zm16 32v32h16v-32zm64 32v-32h-16v32zm-16-32v-32h-16v32zm-32 48h32v-16h-32z" fill="#000"/><text class="emoj" x="308" y="250">😭</text><text class="emoj" x="20" y="396">😵</text></svg>';
 
@@ -74,7 +74,7 @@ function getEmoji(num:number):string {
     case 9: 
       return '💣'; 
     default: 
-      return '🔳'; 
+      return '🟧'; 
   }
 }
 
@@ -184,7 +184,7 @@ const Board: SnapComponent<BoardProps> = ({board, state, marks}) => {
       <Box>
         {board2D.map( row => { 
           return ( 
-            <Box direction="horizontal" alignment="center">
+            <Box direction="horizontal" alignment="space-around">
               {row.map( cell => <Button name="lose">{getEmoji(cell)}</Button> )}
             </Box>
           ); 
@@ -197,7 +197,7 @@ const Board: SnapComponent<BoardProps> = ({board, state, marks}) => {
       <Box>
         {board2D.map( row => { 
           return ( 
-            <Box direction="horizontal" alignment="center">
+            <Box direction="horizontal" alignment="space-around">
               {row.map( cell => <Button name="win">{(cell==19) ? '🚩' : getEmoji(cell)}</Button> )}
             </Box>
           ); 
@@ -210,7 +210,7 @@ const Board: SnapComponent<BoardProps> = ({board, state, marks}) => {
       <Box>
         {board2D.map( (row,y) => { 
           return ( 
-            <Box direction="horizontal" alignment="center">
+            <Box direction="horizontal" alignment="space-around">
               {row.map( (cell,x) => <MarkCell x={x} y={y} val={cell} marks={marks}/> )}
             </Box>
           ); 
@@ -222,7 +222,7 @@ const Board: SnapComponent<BoardProps> = ({board, state, marks}) => {
     <Box>
       {board2D.map( (row,y) => { 
         return ( 
-          <Box direction="horizontal" alignment="center">
+          <Box direction="horizontal" alignment="space-around">
             {row.map( (cell,x) => <Cell x={x} y={y} val={cell} marks={marks}/> )}
           </Box>
         ); 
@@ -234,12 +234,14 @@ const Board: SnapComponent<BoardProps> = ({board, state, marks}) => {
 const Welcome: SnapComponent = () => { 
   return ( 
     <Box>
-      <Image src={svgTitle}/>
-      <Divider/>
-      <Heading>Welcome to Minesweeper!</Heading>
-      <Text>Try to uncover the empty spaces on the board without tripping a mine.</Text>
-      <Text>Ready to play?</Text>
-      <Button name="fresh">Start</Button>
+      <Section>
+        <Image src={svgTitle}/>
+        <Divider/>
+        <Heading>Welcome to Minesweeper!</Heading>
+        <Text>Try to uncover the empty spaces on the board without tripping a mine.</Text>
+        <Text>Ready to play?</Text>
+        <Button name="fresh">Start</Button>
+      </Section>
     </Box>
   ); 
 }
@@ -352,14 +354,16 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
           id, 
           ui: (
             <Box>
-              <Heading>Stats</Heading>
-              <Row label="Games played"><Text>{''+playerState.stats.games}</Text></Row>
-              <Row label="Games won"><Text>{''+playerState.stats.wins}</Text></Row>
-              <Row label="Success rate"><Text>{(Math.round(playerState.stats.wins * 100) / playerState.stats.games).toFixed(2)+'%'}</Text></Row>
-              <Divider/>
-              <Box direction="horizontal" alignment="space-around">
-                <Button name="fresh">Go back</Button>
-              </Box>
+              <Section>
+                <Heading>Stats</Heading>
+                <Row label="Games played"><Text>{''+playerState.stats.games}</Text></Row>
+                <Row label="Games won"><Text>{''+playerState.stats.wins}</Text></Row>
+                <Row label="Success rate"><Text>{(Math.round(playerState.stats.wins * 100) / playerState.stats.games).toFixed(2)+'%'}</Text></Row>
+                <Divider/>
+                <Box direction="horizontal" alignment="space-around">
+                  <Button name="fresh">Go back</Button>
+                </Box>
+              </Section>
             </Box>
           ),
         }
@@ -372,12 +376,14 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
           id, 
           ui: (
             <Box>
-              <Heading>Are you sure?</Heading>
-              <Text>You have a game in progress. If you continue, you will lose your progress and start a new game.</Text>
-              <Box direction="horizontal" alignment="space-around">
-                <Button name="start">Go back</Button>
-                <Button name="new" variant="destructive">Continue</Button>
-              </Box>
+              <Section>
+                <Heading>Are you sure?</Heading>
+                <Text>You have a game in progress. If you continue, you will lose your progress and start a new game.</Text>
+                <Box direction="horizontal" alignment="space-around">
+                  <Button name="start">Go back</Button>
+                  <Button name="new" variant="destructive">Continue</Button>
+                </Box>
+              </Section>
             </Box>
           ),
         }
@@ -390,12 +396,18 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
           id, 
           ui: (
             <Box>
-              <Board board={playerState.board} state={event.name} marks={playerState.marks}/>
-              <Box direction="horizontal" alignment="space-between">
-                <Text>Click on a 🔳 to mark it</Text>
-                <Button name="start">Back</Button>
-              </Box>
-              <Button name="new">New game</Button>
+              <Section>
+                <Board board={playerState.board} state={event.name} marks={playerState.marks}/>
+              </Section>
+              <Section>
+                <Box direction="horizontal" alignment="space-between">
+                  <Text>Click on a 🔳 to mark it</Text>
+                  <Button name="start">Back</Button>
+                </Box>
+              </Section>
+              <Section>
+                <Button name="new">New game</Button>
+              </Section>
             </Box>
           ),
         },
@@ -409,12 +421,18 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
           id, 
           ui: (
             <Box>
-              <Board board={playerState.board} state={event.name}/>
-              <Text><Bold>{event.name=="win" ? "😎 You won! Want to play again?" : "😵 Sorry, you lost. Try again?"}</Bold></Text>
-              <Box direction="horizontal" alignment="space-around">
-                <Button name="new">New game</Button>
-                <Button name="stats">📊</Button>
-              </Box>
+              <Section>
+                <Board board={playerState.board} state={event.name}/>
+              </Section>
+              <Section>
+                <Text><Bold>{event.name=="win" ? "😎 You won! Want to play again?" : "😵 Sorry, you lost. Try again?"}</Bold></Text>
+              </Section>
+              <Section>
+                <Box direction="horizontal" alignment="space-around">
+                  <Button name="new">New game</Button>
+                  <Button name="stats">📊</Button>
+                </Box>
+              </Section>
             </Box>
           ),
         },
@@ -442,15 +460,21 @@ export const onUserInput: OnUserInputHandler = async ({id, event}) => {
           id, 
           ui: (
             <Box>
-              <Board board={playerState.board} state="play" marks={playerState.marks}/>
-              <Box direction="horizontal" alignment="space-between">
-                <Text>{"Cleared: "+clear+"%"}</Text>
-                <Button name="mark">Mark 🚩</Button>
-              </Box>
-              <Box direction="horizontal" alignment="space-around">
-                <Button name="confirmNew">New game</Button>
-                <Button name="stats">📊</Button>
-              </Box>
+              <Section>
+                <Board board={playerState.board} state="play" marks={playerState.marks}/>
+              </Section>
+              <Section>
+                <Box direction="horizontal" alignment="space-between">
+                  <Text>{"Cleared: "+clear+"%"}</Text>
+                  <Button name="mark">Mark 🚩</Button>
+                </Box>
+              </Section>
+              <Section>
+                <Box direction="horizontal" alignment="space-around">
+                  <Button name="confirmNew">New game</Button>
+                  <Button name="stats">📊</Button>
+                </Box>
+              </Section>
             </Box>
           ),
         },
@@ -465,10 +489,12 @@ export const onInstall: OnInstallHandler = async () => {
       type: "alert",
       content: (
         <Box>
-          <Image src={svgTitle}/>
-          <Divider/>
-          <Heading>Thanks for installing Minesweeper!</Heading>
-          <Text>To play, open the MetaMask menu, then click "Snaps", then "Minesweeper".</Text>
+          <Section>
+            <Image src={svgTitle}/>
+            <Divider/>
+            <Heading>Thanks for installing Minesweeper!</Heading>
+            <Text>To play, open the MetaMask menu, then click "Snaps", then "Minesweeper".</Text>
+          </Section>
         </Box>
       )
     },
