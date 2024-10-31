@@ -4,4 +4,4 @@ A fully interactive recreation of the classic puzzle game that runs inside of Me
 
 This Snap uses open permissions, so anyone can install it without relying on the Snaps allowlist. 
 
-Install here: https://snaps.homerow.club
+Install here: https://montoya.github.io/minesweeper-snap/
